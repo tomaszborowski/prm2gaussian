@@ -3,12 +3,13 @@
 """
 This is the main code for the script that is supposed
 to read Amber prmtop and prmcrd(rst7) files and write
-Gaussian16 Amber=softonly input file
+Gaussian16 Amber=softonly or ONIOM(QM,Amber=softonly) input file
 
 The script expects 3 file names as command line arguments:
-    #1 prmtop file
-    #2 prmcrd(rst7) file
-    #3 output G16 input file
+            #1 prmtop file
+            #2 prmcrd(rst7) file
+            #3 output G16 input file
+optional    #4 input file for this script    
 
 Warnings:
 1. bond order is uniformly 1.0 for all bonded atom pairs in the connectivity section    
@@ -19,20 +20,27 @@ the script does not use the information stored in the scee_scale_factor and scnb
 in the same way, but currently in G09 and G16 Revision C.01 the flags nbdir/nbterm are
 not accepted in input)
 
-3. total spin is calculated as either 1 or 2, depending on the total charge and atomic
-composition
+3. for MM-only G16 input the total spin is calculated as either 1 or 2, depending on 
+the total charge and atomic composition
 
 4. dihedral term accepts periodicity from 1 to 4 (as in standard Amber and GAFF FF), 
 higher values are ignored (warning is printed)
 
 5. if atomic number read from prmtop is smaller than 1, it is corrected based on
-the mass 
+the atom mass 
 
 6. adds zero force constants for angles in triangular water molecules if explicit 
 HW-HW bond data is present    
 
+7. bond length scaling factor used to calculate the positions of H-link atoms is set
+at 0.723886 (prm2Gaussian_functions : adjust_HLA_coords), 
+atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types) 
+(this file, "check if all QM-MM bonds are capped with link atoms" section)
+
+REQUIRED packages: numpy, pandas, scipy, re, sys, datetime, string, fortranformat
+    
 Created on Fri Oct  9 10:27:30 2020
-Last update on 19/04/2021
+Last update on 2/05/2021
 branch: oniom
 
 @author: borowski, wojdyla
@@ -43,12 +51,24 @@ import pandas as pd
 import datetime
 import string
 
+from prm2Gaussian_functions import rad_to_deg, coord_to_atom_index, remove_redundant_data
+from prm2Gaussian_functions import remove_eq_imp, remove_eq_dih, is_3rd_atom_central
+from prm2Gaussian_functions import adjust_HLA_coords, write_xyz_file, res2atom_lists
+from prm2Gaussian_functions import not_trimmed_res2atom_lists, write_xyz_file_MM_LA
+
+
 from read_prmtop import prmtop_read_pointers, prmtop_read_text_section
 from read_prmtop import prmtop_read_numeric_section, crd_read_coordinates
 from read_prmtop import atm_mass, atm_number, at_num_symbol
 from read_prmtop import LEGIT_TEXT_FLAGS, LEGIT_NUM_FLAGS
 
 from connectivity_list import gen_connectivity_line
+
+from oniom import atom, residue, peptide
+from oniom import generate_label, N_CO_in_residue, is_peptide_bond2
+from oniom import main_side_chain
+from oniom import read_single_number, input_read_qm_part, input_read_link_atoms
+from oniom import input_read_trim, input_read_freeze, atom_to_link_atom
 
 # CONSTANTS
 letters = string.ascii_uppercase
@@ -59,153 +79,32 @@ HW_HW_bond = ('HW', 'HW')
 # Important variables (switches):
 VERBOSE = False
 HW_HW_present = False
-
-
-# angle eq values are read in from prmtop in [rad], whereas in G16 they must be given in deg
-def rad_to_deg(angle):
-    """
-    converts angle from radians to degrees
-    returns values in the 0 ... 360 range
-    """
-    return np.mod((180.0 * angle)/np.pi,360.0)
-
-def coord_to_atom_index(coord_index):
-    """
-    converts coordinate array index 
-    to atom index
-    """
-    return int(coord_index/3) + 1
-
-def remove_redundant_data(data,at_ix):
-    """ 
-    removes redundant entries from bonds_data, angles_data or dihedral_data
-    INPUT:    
-    data - list with data, atom types are grouped in a tuple
-    at_ix - index (of data) for atom types tuple
-    RETURNS:
-    a list with nonredundant data: data_non_redund    
-    """
-    data_length = len(data)
-    data_non_redund = []
-    if data_length > 0:
-        aux_non_redundant = [True for i in range(data_length)]        
-        i = 0
-        while i < data_length:
-            raw_i = data[i]
-            j = i + 1
-            while j < data_length:
-                raw_j = data[j]
-                if (raw_i[at_ix] == raw_j[at_ix]) and (raw_i[0] == raw_j[0]):
-                     aux_non_redundant[j] = False    
-                elif (raw_i[at_ix] == tuple(reversed(raw_j[at_ix])) and (raw_i[at_ix][0] != raw_j[at_ix][0])):
-                     aux_non_redundant[j] = False   
-                j += 1
-            i += 1
-        
-        for i in range(data_length):
-            if aux_non_redundant[i]:
-                data_non_redund.append(data[i])
-    return data_non_redund
-
-def remove_eq_imp(imp_data):
-    """ 
-    improper angles A-B-X-Y and B-A-X-Y are equivalent, Gaussian expects only one of them;
-    this function reads imp_data (a list), and returns a list (imp_data_no_eq) with one such 
-    if such redundancy is encountered.
-    INPUT:    
-    imp_data - list with data for improper angles, atom types are grouped in a tuple
-    RETURNS:
-    a list with nonredundant data: imp_data_no_eq    
-    """
-    data_length = len(imp_data)
-    imp_data_no_eq = []
-    if data_length > 0:
-        aux_non_redundant = [True for i in range(data_length)]        
-        i = 0
-        while i < data_length:
-            raw_i = imp_data[i]
-            j = i + 1
-            while j < data_length:
-                raw_j = imp_data[j]
-                if (raw_i[3][2:4] == raw_j[3][2:4]) and (raw_i[3][0] == raw_j[3][1])\
-                    and (raw_i[3][1] == raw_j[3][0]):
-                     aux_non_redundant[j] = False        
-                j += 1
-            i += 1
-        
-        for i in range(data_length):
-            if aux_non_redundant[i]:
-                imp_data_no_eq.append(imp_data[i])
-    return imp_data_no_eq    
-
-def remove_eq_dih(dih_data):
-    """ 
-    ordinary dihedral angles A-X-Y-A and A-Y-X-A are equivalent (not impropers!) and 
-    Gaussian expects only one of them;
-    this function reads dih_data (a list), and returns a list (dih_data_no_eq) 
-    only with one such if such a redundancy is encountered.
-    INPUT:    
-    dih_data - list with data for normal dihedral angles, atom types are grouped in a tuple
-    RETURNS:
-    a list with nonredundant data: dih_data_no_eq    
-    """    
-    data_length = len(dih_data)
-    dih_data_no_eq = []
-    if data_length > 0:
-        aux_non_redundant = [True for i in range(data_length)]        
-        i = 0
-        while i < data_length:
-            raw_i = dih_data[i]
-            j = i + 1
-            while j < data_length:
-                raw_j = dih_data[j]
-                # case A-A-A-A:
-                if (raw_i[3][0] == raw_i[3][1] == raw_i[3][2] == raw_i[3][3] \
-                 == raw_j[3][0] == raw_j[3][1] == raw_j[3][2] == raw_j[3][3]) \
-                 and (raw_i[0] != raw_j[0]):
-                     pass # aux_non_redundant[j] = True
-                # other cases A-X-Y-A:
-                elif (raw_i[3][0] == raw_j[3][0] == raw_i[3][3] == raw_j[3][3])\
-                   and (raw_i[3][1] == raw_j[3][2]) and (raw_i[3][2] == raw_j[3][1]):
-                     aux_non_redundant[j] = False        
-                j += 1
-            i += 1
-        
-        for i in range(data_length):
-            if aux_non_redundant[i]:
-                dih_data_no_eq.append(dih_data[i])
-    return dih_data_no_eq 
-        
-def is_3rd_atom_central(atom_list,connect_list):
-    """
-    INPUT:
-        atom_list - a list of (4) zero-based atom indexes 
-        connect_list - a dictionary key: zero based atom index; value: a list
-                       (zero based) indexes of atom bonded to a given atom
-    RETURNS:
-        TRUE if the 3rd atom is the central one (bonded to first, second and fourth)
-        FALSE otherwise
-    """
-    con_to_3rd = connect_list[ atom_list[2] ]
-    if (atom_list[0] in con_to_3rd) and (atom_list[1] in con_to_3rd) and (atom_list[3] in con_to_3rd):
-        return True
-    else:
-        return False
+TRIM_MODEL = False
+ONIOM = False
+FREEZE = False
+read_prm2Gaussian_inp = False
 
         
 ### ---------------------------------------------------------------------- ###
 ### Seting the file names                                                  ###
-# prmtop_file = sys.argv[1]
-# prmcrd_file = sys.argv[2]
-# g16_inp_file = sys.argv[3]
-
+prmtop_file = sys.argv[1]
+prmcrd_file = sys.argv[2]
+g16_inp_file = sys.argv[3]
+if len(sys.argv)>4:
+    prm2Gaussian_inp_file = sys.argv[4]
+    read_prm2Gaussian_inp = True
 
 ### ---------------------------------------------------------------------- ###
 ### test cases
+
+# prmtop_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmtop'
+# prmcrd_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmcrd'
+# g16_inp_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo_2_05.com'
+# prm2Gaussian_inp_file = './pliki_do_testow/H6H/prm2gaussian.oniom.inp'
         
-prmtop_file = './pliki_do_testow/dihydroclavaminate/dihydroclavaminate.prmtop'
-prmcrd_file = './pliki_do_testow/dihydroclavaminate/dihydroclavaminate.prmcrd'
-g16_inp_file = './pliki_do_testow/dihydroclavaminate/dihydroclavaminate_19_04.com'
+# prmtop_file = './pliki_do_testow/dihydroclavaminate/dihydroclavaminate.prmtop'
+# prmcrd_file = './pliki_do_testow/dihydroclavaminate/dihydroclavaminate.prmcrd'
+# g16_inp_file = './pliki_do_testow/dihydroclavaminate/dihydroclavaminate_21_04.com'
 
 # prmtop_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.nowat.prmtop'
 # prmcrd_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.nowat.prmcrd'
@@ -343,7 +242,7 @@ if natom_crd != NATOM:
     
 
 ### ---------------------------------------------------------------------- ###
-### Processing the data                                                    ###
+### Processing the prmtop data                                             ###
 
 # converting atomic charges to atomic units:
 for i in range(len(prmtop_num_sections['charge'])):
@@ -558,7 +457,7 @@ angles_data_non_redund = remove_redundant_data(angles_data,1)
 if HW_HW_present:
     angles_data_non_redund.append([0, ('OW', 'HW', 'HW'), 0.0, 0.0, True])
     angles_data_non_redund.append([0, ('HW', 'OW', 'HW'), 0.0, 0.0, True])
-    print('Adding dummy angle force constants for triangulat WAT, since HW-HW bond present')
+    print('\n Adding dummy angle force constants for triangulat WAT, since HW-HW bond present \n')
 
 if VERBOSE:
     print("auxiliary list angles_data_non_redund done ", datetime.datetime.now(), "\n")
@@ -688,8 +587,275 @@ for type in unique_types:
 if VERBOSE:    
     print("epsilon and r_min created ", datetime.datetime.now(), "\n")
 
+
+
+### ------------------------------------------------------------------------- ###
+### preparing obj data for model manipulation if prm2Gaussian_inp_file exists ###
+    
+atoms = []      # a list of atom objects
+residues = []   # a list of residue objects
+chains = []     # a list of peptide objects
+
+if read_prm2Gaussian_inp:
+    for i in range(NATOM):
+        element = at_num_symbol[prmtop_num_sections['atomic_number'][i]]
+        tree_chain_classification = prmtop_text_sections['tree_chain_classification'][i]
+        at_type = prmtop_text_sections['amber_atom_type'][i]
+        new_at_type = unq_to_NEW_types[ at_type ]
+        at_chg = prmtop_num_sections['charge'][i]
+    
+        new_atom = atom(coordinates[i], i, element)
+        new_atom.set_tree_chain_classification(tree_chain_classification)
+        new_atom.set_connect_list(connect_list[i])
+        new_atom.set_type(at_type)
+        new_atom.set_new_type(new_at_type)
+        new_atom.set_at_charge(at_chg)
+        
+        atoms.append(new_atom)
+
+
+    atom_ranges = prmtop_num_sections['residue_pointer']
+    atom_ranges.append(NATOM+1)
+    for i in range(NRES):
+        label = prmtop_text_sections['residue_label'][i]
+        new_residue = residue(label, i)   
+    
+        first_at_index = atom_ranges[i] - 1 
+        last_at_index_plus_1 = atom_ranges[i+1] - 1
+        for j in range(first_at_index,last_at_index_plus_1,1):
+            new_residue.add_atom(atoms[j])
+        
+        residues.append(new_residue)
+
+# process residues to set in_mainchain atribute of atoms (protein main chain)
+# and populate main_chain_atoms atribute of residues    
+    for res in residues:
+        main_side_chain(res)
+    
+    
+    gen_label = generate_label().__next__
+    
+    chain_indx = 0
+    new_chain = peptide(gen_label(), chain_indx)
+    
+    for res in residues:
+        if N_CO_in_residue(res):
+            res.set_in_protein(True)
+            chain_last_resid = new_chain.get_last_residue()
+            if chain_last_resid:
+                if is_peptide_bond2(chain_last_resid,res):
+                    new_chain.add_residue(res)
+                else:
+                    chains.append(new_chain)
+                    chain_indx += 1
+                    new_chain = peptide(gen_label(), chain_indx)
+                    new_chain.add_residue(res)
+            else:
+                new_chain.add_residue(res)
+        elif new_chain.get_last_residue():
+            chains.append(new_chain)
+            chain_indx += 1
+            new_chain = peptide(gen_label(), chain_indx)
+ 
+    
 ### ---------------------------------------------------------------------- ###
-### Writing the output - G16 input file                                    ###
+### Reading prm2Gaussian input file, if it exists                          ###
+
+if read_prm2Gaussian_inp:
+    prm2g = open(prm2Gaussian_inp_file, 'r')
+    
+    qm_part = input_read_qm_part(prm2g, residues, atoms)
+    link_atoms = input_read_link_atoms(prm2g, atoms)
+    trimmed = input_read_trim(prm2g, residues, atoms)
+    frozen = input_read_freeze(prm2g, residues, atoms)
+    
+    qm_chg = read_single_number(prm2g, "%qm_charge")
+    qm_mul = read_single_number(prm2g, "%qm_multip")
+    
+    prm2g.close()
+
+
+    if VERBOSE:
+        print("prm2Gaussian input file has been read ", datetime.datetime.now(), "\n")
+
+# set some key switch variables based on results of reading prm2Gaussian file
+    if len(qm_part) > 0:
+        ONIOM = True
+    if len(trimmed) > 0:
+        TRIM_MODEL = True
+    if len(frozen) > 0:
+        FREEZE = True
+        
+### ---------------------------------------------------------------------- ###
+### Compute new atom indexes if TRIM_MODEL = True                          ###
+    if TRIM_MODEL:
+        old_new_at_ix = {}
+        i = 0
+        j = 0
+        for res in residues:
+            if not res.get_trim():
+                res.set_new_index(i)
+                i += 1
+                for at in res.get_atoms():
+                    at.set_new_index(j)
+                    key = at.get_index()
+                    old_new_at_ix[key] = j
+                    j += 1
+
+
+### ---------------------------------------------------------------------- ###
+### H-link atom manipulations (HLA position, bonded_to, set new_at_type,   ###
+### set new_index                
+    if ONIOM:
+        lk_at_indexes = []
+    
+        for at in link_atoms:
+            lk_at_indexes.append( at.get_index() )
+            con_list = at.get_connect_list()
+            tp = at.get_type()
+            if tp in unq_to_NEW_types.keys(): # set new_at_type
+                at.set_new_type( unq_to_NEW_types[tp] ) 
+            else:
+                at.set_new_type(tp)
+            at.set_new_index( atoms[ at.get_index() ].get_new_index() ) # set new_index
+            for con_ix in con_list: # find H-layer (QM) atom bonded to a given link atom
+                con_at = atoms[con_ix]
+                if con_at.get_oniom_layer() == 'H':
+                    qm_1 = con_at
+                    at.set_bonded_to(con_ix)
+                    adjust_HLA_coords(at, con_at)
+                    break
+
+        
+### ---------------------------------------------------------------------- ###
+### check if all QM-MM bonds are capped with link atoms                    ###
+    qm_indexes = []
+    for at in qm_part:
+        qm_indexes.append( at.get_index() )
+    
+    link_atoms_updated = False    
+    for at in qm_part:
+        qm_at_connect = at.get_connect_list()
+        for item in qm_at_connect:
+            if (item not in qm_indexes) and (item not in lk_at_indexes.copy()):
+                print("\nFound a QM-MM bond not capped with H-link atom")
+                print("between atoms with (0-based) index of: ", at.get_index(), item)
+                print("Adding a standard H-link atom with HC type\n")
+                new_lk_atom = atom_to_link_atom(atoms[item], 'HC', 0.000001)
+                new_lk_atom.set_bonded_to(at.get_index())
+                if 'HC' in unq_to_NEW_types.keys():
+                    new_lk_atom.set_new_type( unq_to_NEW_types['HC'] )
+                else:
+                    new_lk_atom.set_new_type( 'HC' )
+                adjust_HLA_coords(new_lk_atom, at)
+                link_atoms.append(new_lk_atom)
+                lk_at_indexes.append(item)
+                link_atoms_updated = True
+    
+    # sort link_atoms if this list was expanded:
+    if link_atoms_updated:
+        link_atoms.sort(key=lambda x: x.get_index(), reverse=True)
+        lk_at_indexes.sort()            
+
+### ---------------------------------------------------------------------- ###
+### check if type and bonded parameters for HLA are present                ###
+    redundant_bonds = []
+    redundant_angles = []
+    redundant_dihedrals = []
+
+    for item in bonds_data:
+        redundant_bonds.append(item[1])
+    for item in angles_data:
+        redundant_angles.append(item[1])
+    for item in dihedral_data:
+        redundant_dihedrals.append(item[3])
+
+    for at in link_atoms:
+        lk_at_ix = at.get_index()
+        lk_at_nix = at.get_new_index()
+        con_list = at.get_connect_list()
+        for con_ix in con_list: # find H-layer (QM) atom bonded to a given link atom
+            con_at = atoms[con_ix]
+            if con_at.get_oniom_layer() == 'H':
+                qm_1 = con_at
+                qm_1_type = qm_1.get_type()
+                qm_1_ix = qm_1.get_index()
+                qm_1_nix = qm_1.get_new_index()
+        at_type = at.get_type()
+        if at_type not in unique_types: # check if given types (for H-link atoms) are present
+            print('\nH-link atom type ', at_type, 'not present in this prmtop file')
+            print('You will need to add its non-bonded and bonded parameters into G16 input file by hand')
+            print('atom index and new index: ',lk_at_ix, lk_at_nix, '\n')
+        bond_tup = (at_type, qm_1_type) # checking bond parameters
+        bond_tup_r = (qm_1_type, at_type)
+        if (bond_tup not in redundant_bonds) and (bond_tup_r not in redundant_bonds):
+            print('For link atom of index, new index: ', lk_at_ix, lk_at_nix, 'bond parameters are missing: '\
+                  , str((bond_tup)), lk_at_ix, lk_at_nix,'-', qm_1_ix, qm_1_nix,'\n')
+        for item in qm_1.get_connect_list():
+            if item != lk_at_ix:
+                qm_2= atoms[item]
+                qm_2_type = qm_2.get_type()
+                qm_2_ix = qm_2.get_index()
+                qm_2_nix = qm_2.get_new_index()
+                ang_tup = (at_type, qm_1_type, qm_2_type)
+                ang_tup_r = (qm_2_type, qm_1_type, at_type)
+                if (ang_tup not in redundant_angles) and (ang_tup_r not in redundant_angles):
+                    print('For link atom of index, new index: ', lk_at_ix, lk_at_nix, 'angle parameters are missing: '\
+                          , str((ang_tup)), lk_at_ix, lk_at_nix, '-', qm_1_ix, qm_1_nix, '-', qm_2_ix, qm_2_nix,'\n')
+                for item2 in qm_2.get_connect_list():
+                    if item2 != qm_1_ix:
+                        qm_3 = atoms[item2]
+                        qm_3_type = qm_3.get_type()
+                        qm_3_ix = qm_3.get_index()
+                        qm_3_nix = qm_3.get_new_index()
+                        dih_tup = (qm_3_type, qm_2_type, qm_1_type, at_type)
+                        dih_tup_r = (at_type, qm_1_type, qm_2_type, qm_3_type)
+                        if (dih_tup not in redundant_dihedrals) and (dih_tup_r not in redundant_dihedrals):
+                            print('For link atom of index, new index: ', lk_at_ix, lk_at_nix, 'dihedral angle parameters are missing: '\
+                          , str((dih_tup)), lk_at_ix, lk_at_nix, '-', qm_1_ix, qm_1_nix, '-', qm_2_ix, qm_2_nix, '-', qm_3_ix, qm_3_nix,'\n')
+
+### ---------------------------------------------------------------------- ###
+### write out xyz files with qm_system, qm_part, qm_mm_model, HLA, MM_LA,  ###
+### frozen, trimmed, qm_mm_free, qm_mm_frozen                              ###
+if ONIOM:
+    qm_system = qm_part + link_atoms
+    qm_system.sort(key=lambda x: x.get_index(), reverse=True)
+    write_xyz_file(qm_system, 'QM_SYSTEM.xyz')
+    write_xyz_file(qm_part, 'QM_PART.xyz')
+
+    if len(link_atoms) > 0:
+        write_xyz_file_MM_LA(link_atoms, 'MM_LA.xyz')
+
+if TRIM_MODEL:
+    trimmed_atoms = res2atom_lists(trimmed)
+    write_xyz_file(trimmed_atoms, 'TRIMMED.xyz')
+
+if FREEZE:
+    frozen_atoms = res2atom_lists(frozen)
+    write_xyz_file(frozen_atoms, 'FROZEN.xyz')
+
+qm_mm_model = not_trimmed_res2atom_lists(residues)
+write_xyz_file(qm_mm_model, 'MODEL.xyz')
+
+
+### some analysis of the QM:MM system ###
+if ONIOM:
+    qm_part_charge = 0.0
+    for at in qm_part:
+        qm_part_charge += at.get_at_charge()
+    print('\nQM part of the system (without H-link atoms) has a charge: ', "{:.2e}".format(qm_part_charge))
+
+if read_prm2Gaussian_inp:
+    if len(atoms) != NATOM:
+        print('WARNING: length of atom list =', str(len(atoms)),' does not agree with NATOM = ',str(NATOM))
+    
+    if len(residues) != NRES:
+        print('WARNING: length of residue list =', str(len(residues)),' does not agree with NRES = ',str(NRES))
+
+    
+
+### ---------------------------------------------------------------------- ###
+### Writing the output - G16 MM or ONIOM input file                        ###
 
 # open the file for writting
 g16file = open(g16_inp_file, 'w')
@@ -697,6 +863,9 @@ empty_l = '\n'
 
 # header section    
 l1_g_input = '# Amber=(SoftOnly,Print) Geom=Connectivity \n'
+l1_g_oniom_input = '# ONIOM(UB3LYP/def2SVP EmpiricalDispersion=GD3BJ:Amber=SoftFirst) Geom=Connectivity\n\
+5d scf=(xqc,maxcycle=350) nosymm \n'
+
 l3_g_input = 'comment line \n'
 
 # calculate the total charge and round it to nearest integer value:
@@ -706,7 +875,8 @@ print('Total charge of the system is: ', "{:.2e}".format(tot_q), ' , which is ro
 if VERBOSE:
     print(datetime.datetime.now(), "\n")
 
-# assuming the total spin is singlet or dublet (does not have any meaning for pure FF calculations)
+# for MM-only input : assuming the total spin is singlet or dublet 
+# (does not have any meaning for pure FF calculations):
 n_electrons = np.sum(prmtop_num_sections['atomic_number']) - tot_q_int
 if n_electrons % 2:
     S = 2
@@ -714,24 +884,65 @@ else:
     S = 1
     
 l5_g_input = str(tot_q_int) + '    ' + str(S)  + '\n'
+if ONIOM:
+    l5_g_oniom_input = str(tot_q_int) + '  ' + str(qm_mul) + '    ' + str(qm_chg) + '  ' + str(qm_mul) +\
+    '    ' + str(qm_chg) + '  ' + str(qm_mul)  + '\n'  
 
 # header section - writting to file
-g16file.write(l1_g_input)
+if ONIOM:
+    g16file.write(l1_g_oniom_input)
+else:
+    g16file.write(l1_g_input)
+    
 g16file.write(empty_l)
 g16file.write(l3_g_input)
 g16file.write(empty_l)
-g16file.write(l5_g_input)
+
+if ONIOM:
+    g16file.write(l5_g_oniom_input)
+else:
+    g16file.write(l5_g_input)
+
 
 # coordinates section
 # iterate over atoms and generate appopriate line; write the line into the file    
-for i in range(NATOM):    
-    line = at_num_symbol[prmtop_num_sections['atomic_number'][i]] + '-' +\
-        unq_to_NEW_types[ prmtop_text_sections['amber_atom_type'][i] ]  + '-' +\
-        str(round(prmtop_num_sections['charge'][i], 6)) + '\t\t' +\
-        '{:06.6f}'.format(coordinates[i][0]) + '     ' +\
-        '{:06.6f}'.format(coordinates[i][1]) + '     ' +\
-        '{:06.6f}'.format(coordinates[i][2]) + '\n'
-    g16file.write(line)
+if (not ONIOM) and (not TRIM_MODEL) and (not FREEZE):
+    for i in range(NATOM):    
+        line = at_num_symbol[prmtop_num_sections['atomic_number'][i]] + '-' +\
+            unq_to_NEW_types[ prmtop_text_sections['amber_atom_type'][i] ]  + '-' +\
+            str(round(prmtop_num_sections['charge'][i], 6)) + '\t\t' +\
+            '{:06.6f}'.format(coordinates[i][0]) + '     ' +\
+            '{:06.6f}'.format(coordinates[i][1]) + '     ' +\
+            '{:06.6f}'.format(coordinates[i][2]) + '\n'
+        g16file.write(line)
+else:
+    for res in residues:
+        if not res.get_trim():
+            for at in res.get_atoms():
+                el = at.get_element()
+                tp = at.get_new_type()
+                chg = at.get_at_charge()
+                fzn = at.get_frozen()
+                cord = at.get_coords()
+                line = el + '-' + tp + '-' + str(round(chg, 6)) + '\t' + str(fzn) + '\t\t' +\
+                '{:06.6f}'.format(cord[0]) + '     ' +\
+                '{:06.6f}'.format(cord[1]) + '     ' +\
+                '{:06.6f}'.format(cord[2])
+                if not ONIOM:
+                    line = line + '\n'
+                elif ONIOM:
+                    lr = at.get_oniom_layer()
+                    line = line + '\t' + lr
+                    if at.get_index() in lk_at_indexes:
+                        lk_at = link_atoms[ lk_at_indexes.index( at.get_index() ) ]
+                        el = lk_at.get_element()
+                        tp = lk_at.get_new_type()
+                        chg = lk_at.get_at_charge()
+                        bto = lk_at.get_bonded_to() + 1 # shift from 0- to 1- based indexing
+                        extra = el + '-' + tp + '-' + '{:02.6f}'.format(chg) + '\t' + str(bto)
+                        line = line + '  ' + extra
+                    line = line + '\n'
+                g16file.write(line)
 
     
 # write separator empty line:
@@ -741,13 +952,28 @@ if VERBOSE:
     
 
 # write connectivity list into the gaussian input,
-# a given connectivity is specified only once:
-for i in range(NATOM):
-    con_4_g16 = connect_list[i]
-    for atom in con_4_g16.copy():
-        if atom < i:
-            con_4_g16.remove(atom)
-    g16file.write(gen_connectivity_line(i, con_4_g16))
+# a given bond between two atoms is specified only once:
+if not TRIM_MODEL:
+    for i in range(NATOM):
+        con_4_g16 = connect_list[i]
+        for atom_idx in con_4_g16.copy():
+            if atom_idx < i:
+                con_4_g16.remove(atom_idx)
+        g16file.write(gen_connectivity_line(i, con_4_g16))
+else:
+    for res in residues:
+        if not res.get_trim():
+            for at in res.get_atoms():
+                at_ix = at.get_index()
+                con_4_g16 = at.get_connect_list()
+                for atom_idx in con_4_g16.copy():
+                    if atom_idx < at_ix:
+                        con_4_g16.remove(atom_idx)
+                new_con_4_g16 = []
+                for atom_idx in con_4_g16:
+                    new_con_4_g16.append( old_new_at_ix[atom_idx] )
+                g16file.write(gen_connectivity_line(at.get_new_index(), new_con_4_g16))
+                
 
 # write separator empty line:
 g16file.write(empty_l)
