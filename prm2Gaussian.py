@@ -41,9 +41,10 @@ REQUIRED packages: numpy, pandas, scipy, re, sys, datetime, string, fortranforma
     
 Created on Fri Oct  9 10:27:30 2020
 Last update on 2/05/2021
-branch: oniom
+branch: master
 
 @author: borowski, wojdyla
+Report bugs to: tomasz.borowski@ikifp.edu.pl or zuzanna.wojdyla@ikifp.edu.pl
 """
 import sys
 import numpy as np
