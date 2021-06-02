@@ -40,7 +40,7 @@ atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types)
 REQUIRED packages: numpy, pandas, scipy, re, sys, datetime, string, fortranformat
     
 Created on Fri Oct  9 10:27:30 2020
-Last update on 2/05/2021
+Last update on 2/06/2021
 branch: master
 
 @author: borowski, wojdyla
@@ -97,6 +97,12 @@ if len(sys.argv)>4:
 
 ### ---------------------------------------------------------------------- ###
 ### test cases
+
+# prmtop_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.prmtop'
+# prmcrd_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.rst7'
+# g16_inp_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.g16.com'
+# prm2Gaussian_inp_file = './pliki_do_testow/qm_ectc_core/ectc_prm2g.oniom.inp'
+# read_prm2Gaussian_inp = True
 
 # prmtop_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmtop'
 # prmcrd_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmcrd'
@@ -972,7 +978,10 @@ else:
                         con_4_g16.remove(atom_idx)
                 new_con_4_g16 = []
                 for atom_idx in con_4_g16:
-                    new_con_4_g16.append( old_new_at_ix[atom_idx] )
+                    try:
+                        new_con_4_g16.append( old_new_at_ix[atom_idx] )
+                    except KeyError:
+                        print("\n Warning: bond between these atoms is not preserved: ", at_ix, atom_idx)
                 g16file.write(gen_connectivity_line(at.get_new_index(), new_con_4_g16))
                 
 
