@@ -40,7 +40,7 @@ atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types)
 REQUIRED packages: numpy, pandas, scipy, re, sys, datetime, string, fortranformat
     
 Created on Fri Oct  9 10:27:30 2020
-Last update on 2/06/2021
+Last update on 3/06/2021
 branch: master
 
 @author: borowski, wojdyla
@@ -884,7 +884,16 @@ if VERBOSE:
 
 # for MM-only input : assuming the total spin is singlet or dublet 
 # (does not have any meaning for pure FF calculations):
-n_electrons = np.sum(prmtop_num_sections['atomic_number']) - tot_q_int
+nuclear_charge = 0    
+if TRIM_MODEL:
+    for res in residues:
+        if not res.get_trim():
+            for at in res.get_atoms():
+                nuclear_charge += atm_number[at.get_element()]
+    n_electrons = nuclear_charge - tot_q_int
+else:    
+    n_electrons = np.sum(prmtop_num_sections['atomic_number']) - tot_q_int
+
 if n_electrons % 2:
     S = 2
 else:
