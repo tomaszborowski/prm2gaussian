@@ -20,8 +20,8 @@ the script does not use the information stored in the scee_scale_factor and scnb
 in the same way, but currently in G09 and G16 Revision C.01 the flags nbdir/nbterm are
 not accepted in input)
 
-3. for MM-only G16 input the total spin is calculated as either 1 or 2, depending on 
-the total charge and atomic composition
+3. for MM-only G16 input and real/low oniom point the total spin is calculated 
+as either 1 or 2, depending on the total charge and atomic composition
 
 4. dihedral term accepts periodicity from 1 to 4 (as in standard Amber and GAFF FF), 
 higher values are ignored (warning is printed)
@@ -40,7 +40,7 @@ atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types)
 REQUIRED packages: numpy, pandas, scipy, re, sys, datetime, string, fortranformat
     
 Created on Fri Oct  9 10:27:30 2020
-Last update on 3/06/2021
+Last update on 2/07/2021
 branch: master
 
 @author: borowski, wojdyla
@@ -822,7 +822,7 @@ if read_prm2Gaussian_inp:
                           , str((dih_tup)), lk_at_ix, lk_at_nix, '-', qm_1_ix, qm_1_nix, '-', qm_2_ix, qm_2_nix, '-', qm_3_ix, qm_3_nix,'\n')
 
 ### ---------------------------------------------------------------------- ###
-### write out xyz files with qm_system, qm_part, qm_mm_model, HLA, MM_LA,  ###
+### write out xyz files with qm_system, qm_part, model, HLA, MM_LA,  ###
 ### frozen, trimmed, qm_mm_free, qm_mm_frozen                              ###
 if ONIOM:
     qm_system = qm_part + link_atoms
@@ -841,9 +841,20 @@ if FREEZE:
     frozen_atoms = res2atom_lists(frozen)
     write_xyz_file(frozen_atoms, 'FROZEN.xyz')
 
-qm_mm_model = not_trimmed_res2atom_lists(residues)
-write_xyz_file(qm_mm_model, 'MODEL.xyz')
-
+if (ONIOM or TRIM_MODEL or FREEZE):
+    model = not_trimmed_res2atom_lists(residues)
+    write_xyz_file(model, 'MODEL.xyz')
+else:
+    xyz_file = open('MODEL.xyz', 'w')
+    xyz_file.write(str(NATOM)+'\n')
+    xyz_file.write('\n')
+    for i in range(NATOM):    
+        line = at_num_symbol[prmtop_num_sections['atomic_number'][i]] + '     ' +\
+            '{:06.6f}'.format(coordinates[i][0]) + '     ' +\
+            '{:06.6f}'.format(coordinates[i][1]) + '     ' +\
+            '{:06.6f}'.format(coordinates[i][2]) + '\n'
+        xyz_file.write(line)
+    xyz_file.close()
 
 ### some analysis of the QM:MM system ###
 if ONIOM:
@@ -882,7 +893,7 @@ print('Total charge of the system is: ', "{:.2e}".format(tot_q), ' , which is ro
 if VERBOSE:
     print(datetime.datetime.now(), "\n")
 
-# for MM-only input : assuming the total spin is singlet or dublet 
+# for MM-only or real/low (ONIOM) model: assuming the total spin is singlet or dublet 
 # (does not have any meaning for pure FF calculations):
 nuclear_charge = 0    
 if TRIM_MODEL:
@@ -895,13 +906,13 @@ else:
     n_electrons = np.sum(prmtop_num_sections['atomic_number']) - tot_q_int
 
 if n_electrons % 2:
-    S = 2
+    mm_mul = 2
 else:
-    S = 1
+    mm_mul = 1
     
-l5_g_input = str(tot_q_int) + '    ' + str(S)  + '\n'
+l5_g_input = str(tot_q_int) + '    ' + str(mm_mul)  + '\n'
 if ONIOM:
-    l5_g_oniom_input = str(tot_q_int) + '  ' + str(qm_mul) + '    ' + str(qm_chg) + '  ' + str(qm_mul) +\
+    l5_g_oniom_input = str(tot_q_int) + '  ' + str(mm_mul) + '    ' + str(qm_chg) + '  ' + str(qm_mul) +\
     '    ' + str(qm_chg) + '  ' + str(qm_mul)  + '\n'  
 
 # header section - writting to file
