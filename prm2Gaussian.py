@@ -37,10 +37,10 @@ at 0.723886 (prm2Gaussian_functions : adjust_HLA_coords),
 atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types) 
 (this file, "check if all QM-MM bonds are capped with link atoms" section)
 
-REQUIRED packages: numpy, pandas, scipy, re, sys, datetime, string, fortranformat
+REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortranformat
     
 Created on Fri Oct  9 10:27:30 2020
-Last update on 2/07/2021
+Last update on 15/07/2021
 branch: master
 
 @author: borowski, wojdyla
@@ -56,7 +56,7 @@ from prm2Gaussian_functions import rad_to_deg, coord_to_atom_index, remove_redun
 from prm2Gaussian_functions import remove_eq_imp, remove_eq_dih, is_3rd_atom_central
 from prm2Gaussian_functions import adjust_HLA_coords, write_xyz_file, res2atom_lists
 from prm2Gaussian_functions import not_trimmed_res2atom_lists, write_xyz_file_MM_LA
-
+from prm2Gaussian_functions import write_pdb_file
 
 from read_prmtop import prmtop_read_pointers, prmtop_read_text_section
 from read_prmtop import prmtop_read_numeric_section, crd_read_coordinates
@@ -106,8 +106,9 @@ if len(sys.argv)>4:
 
 # prmtop_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmtop'
 # prmcrd_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmcrd'
-# g16_inp_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo_2_05.com'
+# g16_inp_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo_15_07.com'
 # prm2Gaussian_inp_file = './pliki_do_testow/H6H/prm2gaussian.oniom.inp'
+# read_prm2Gaussian_inp = True
         
 # prmtop_file = './pliki_do_testow/dihydroclavaminate/dihydroclavaminate.prmtop'
 # prmcrd_file = './pliki_do_testow/dihydroclavaminate/dihydroclavaminate.prmcrd'
@@ -610,6 +611,7 @@ if read_prm2Gaussian_inp:
         at_type = prmtop_text_sections['amber_atom_type'][i]
         new_at_type = unq_to_NEW_types[ at_type ]
         at_chg = prmtop_num_sections['charge'][i]
+        at_name = prmtop_text_sections['atom_name'][i]
     
         new_atom = atom(coordinates[i], i, element)
         new_atom.set_tree_chain_classification(tree_chain_classification)
@@ -617,6 +619,7 @@ if read_prm2Gaussian_inp:
         new_atom.set_type(at_type)
         new_atom.set_new_type(new_at_type)
         new_atom.set_at_charge(at_chg)
+        new_atom.set_name(at_name)
         
         atoms.append(new_atom)
 
@@ -662,9 +665,8 @@ if read_prm2Gaussian_inp:
         elif new_chain.get_last_residue():
             chains.append(new_chain)
             chain_indx += 1
-            new_chain = peptide(gen_label(), chain_indx)
- 
-    
+            new_chain = peptide(gen_label(), chain_indx)       
+            
 ### ---------------------------------------------------------------------- ###
 ### Reading prm2Gaussian input file, if it exists                          ###
 
@@ -684,6 +686,10 @@ if read_prm2Gaussian_inp:
 
     if VERBOSE:
         print("prm2Gaussian input file has been read ", datetime.datetime.now(), "\n")
+
+# set LAH atribute of LAH atoms
+for lk_atom in link_atoms:
+    atoms[lk_atom.get_index()].set_LAH(True)        
 
 # set some key switch variables based on results of reading prm2Gaussian file
     if len(qm_part) > 0:
@@ -821,6 +827,21 @@ if read_prm2Gaussian_inp:
                             print('For link atom of index, new index: ', lk_at_ix, lk_at_nix, 'dihedral angle parameters are missing: '\
                           , str((dih_tup)), lk_at_ix, lk_at_nix, '-', qm_1_ix, qm_1_nix, '-', qm_2_ix, qm_2_nix, '-', qm_3_ix, qm_3_nix,'\n')
 
+
+# set chain attribute for all residues belonging to peptide chains:
+for chain in chains:
+    chain_label = chain.get_label()
+    for resid in chain.get_residues():
+        resid.set_chain(chain_label)
+            
+# set chain attribute to all other residues that are not trimmed:
+residue_list_no_trim = []        
+for resid in residues:
+    if not resid.get_trim():
+        if resid.get_chain() == '':
+            resid.set_chain( gen_label() )
+            residue_list_no_trim.append(resid) 
+
 ### ---------------------------------------------------------------------- ###
 ### write out xyz files with qm_system, qm_part, model, HLA, MM_LA,  ###
 ### frozen, trimmed, qm_mm_free, qm_mm_frozen                              ###
@@ -844,6 +865,7 @@ if FREEZE:
 if (ONIOM or TRIM_MODEL or FREEZE):
     model = not_trimmed_res2atom_lists(residues)
     write_xyz_file(model, 'MODEL.xyz')
+    write_pdb_file(residues, 'MODEL.pdb')
 else:
     xyz_file = open('MODEL.xyz', 'w')
     xyz_file.write(str(NATOM)+'\n')

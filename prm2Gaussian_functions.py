@@ -207,4 +207,58 @@ def not_trimmed_res2atom_lists(residues):
         if not res.get_trim():
             for at in res.get_atoms():
                 atm_list.append(at)
-    return atm_list    
+    return atm_list
+
+def write_pdb_file(residue_list, file_name):
+    """writes a PDB file with a name file_name
+    residue_list - a list of residue objects 
+    only residues with trim=False are written to the file"""
+    prev_resid_chain = ''
+    pdb_file = open(file_name, 'w')
+    residue_list_no_trim = []
+    for residue in residue_list:
+        if not residue.get_trim():
+            residue_list_no_trim.append(residue)
+    for residue in residue_list_no_trim:
+        resid_name = residue.get_label()
+        resid_name = resid_name.rjust(3, ' ')
+        resid_number = str(residue.get_new_index() + 1)
+        resid_number = resid_number.rjust(4, ' ')
+        for atom in residue.get_atoms():
+            ele = atom.get_element()
+            ele = ele.rjust(2, ' ')
+            at_coord = atom.get_coords()
+            at_name = atom.get_name()
+            at_name = at_name.ljust(4, ' ')
+            at_number = atom.get_new_index() + 1
+            at_number = str(at_number)
+            at_number = at_number.rjust(5, ' ')
+            at_layer = atom.get_oniom_layer()
+            at_LAH = atom.get_LAH()
+            if at_LAH:
+               at_beta = 1.0 
+            elif at_layer == 'H':
+                at_beta = 2.0
+            else: 
+                at_beta = 0.0
+            at_frozen = atom.get_frozen()    
+            if at_frozen == 0:
+                at_occupancy = 1.0
+            else:
+                at_occupancy = 0.0    
+            at_charge = atom.get_at_charge()
+            line = 'ATOM' + '  ' + at_number + ' ' +\
+            at_name + ' ' + resid_name + '  ' + resid_number + '    ' +\
+            '{:8.3f}'.format(at_coord[0]) + '{:8.3f}'.format(at_coord[1]) + '{:8.3f}'.format(at_coord[2]) +\
+            '{:6.2f}'.format(at_occupancy) + '{:6.2f}'.format(at_beta) + '    ' + ele + ' ' + '{:5.3f}'.format(at_charge) + '\n'            
+            pdb_file.write(line)
+        if residue.get_new_index() == 0:
+            prev_resid_chain = residue.get_chain()
+            if residue_list_no_trim[1].get_chain() != prev_resid_chain:
+                pdb_file.write('TER\n')
+        elif residue.get_chain() != prev_resid_chain:
+            prev_resid_chain = residue.get_chain()
+            pdb_file.write('TER\n')
+        else:
+            pass
+    pdb_file.close()    

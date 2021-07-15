@@ -160,7 +160,7 @@ prm2Gaussian.py h6h-oxo+succinate+water_hyo.prmtop h6h-oxo+succinate+water_hyo.p
 ###############
 
 
-The script generates a set of xyz files, which can be useful for checking if the model partitioning is as required. 
+The script generates a set of files, which can be useful for checking if the model partitioning is as required. 
 These files are:
 QM_SYSTEM.xyz
 QM_PART.xyz
@@ -168,9 +168,17 @@ MM_LA.xyz
 TRIMMED.xyz
 FROZEN.xyz
 MODEL.xyz
+MODEL.pdb
+
+In MODEL.pdb:
+- QM atoms have beta = 2.0, 
+- LAH have beta = 1.0, 
+- other MM atoms have beta = 0.0
+- frozen atoms have occupancy = 0
+- optimized atoms have occupancy = 1
 
 
-REQUIRED packages: numpy, pandas, scipy, re, sys, datetime, string, fortranformat
+REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortranformat
 
 There is ABSOLUTELY NO WARRANTY; you use this software at your own risk. 
 

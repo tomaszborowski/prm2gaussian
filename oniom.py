@@ -13,6 +13,7 @@ import string
 import numpy as np
 import scipy.spatial
 import re
+import math
 
 # CONSTANTS
 letters = string.ascii_uppercase
@@ -33,6 +34,8 @@ class atom:
         self.connect_list = []
         self.in_mainchain = False
         self.frozen = 0     # 0 - not frozen, -1 - frozen
+        self.name = None
+        self.LAH = False    # True if this atom is a Link Atom Host (LAH)
         
     def get_coords(self):
         return self.coords
@@ -58,7 +61,10 @@ class atom:
         return self.in_mainchain
     def get_frozen(self):
         return self.frozen
-    
+    def get_name(self):
+        return self.name
+    def get_LAH(self):
+        return self.LAH
  
     def set_type(self,at_type):
         self.at_type = at_type
@@ -78,6 +84,10 @@ class atom:
         self.frozen = frozen
     def set_new_index(self,new_index):
         self.new_index = new_index
+    def set_name(self,name):
+        self.name = name
+    def set_LAH(self,LAH):
+        self.LAH = LAH
         
         
 class link_atom(atom):
@@ -136,6 +146,7 @@ class residue:
         self.atoms = []
         self.main_chain_atoms = []
         self.trim = False
+        self.chain = ''
 
     def get_label(self):
         return self.label        
@@ -154,6 +165,8 @@ class residue:
             yield atom
     def get_trim(self):
         return self.trim
+    def get_chain(self):
+        return self.chain
     
     def set_in_protein(self,in_protein):
         self.in_protein = in_protein
@@ -167,6 +180,8 @@ class residue:
         self.trim = trim
     def set_new_index(self,new_index):
         self.new_index = new_index    
+    def set_chain(self,chain_id):
+        self.chain = chain_id
 
 def NC_in_main_chain(residue):
     """ checks is the residue contains N(M) and C(M) atoms
@@ -288,14 +303,17 @@ class peptide:
 
                            
 def generate_label():
-    prefix = ''
+    label=''
     i = 0
     while True:
         j = int(i/26)
         k = i%26
-        if k == 0 and j > 0:
-            prefix = prefix + letters[j-1]
-        label = prefix + letters[k]
+        label = letters[k]
+        if i > 0:
+            for m in range( int(math.log(i,26)) ):
+                k = j%26
+                j = int(j/26)
+                label = letters[k] + label
         i += 1
         yield label
         
