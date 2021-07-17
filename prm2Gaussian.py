@@ -40,7 +40,7 @@ atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types)
 REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortranformat
     
 Created on Fri Oct  9 10:27:30 2020
-Last update on 15/07/2021
+Last update on 17/07/2021
 branch: master
 
 @author: borowski, wojdyla
@@ -106,7 +106,7 @@ if len(sys.argv)>4:
 
 # prmtop_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmtop'
 # prmcrd_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmcrd'
-# g16_inp_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo_15_07.com'
+# g16_inp_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo_17_07_b.com'
 # prm2Gaussian_inp_file = './pliki_do_testow/H6H/prm2gaussian.oniom.inp'
 # read_prm2Gaussian_inp = True
         
@@ -289,6 +289,7 @@ for i in range(NATOM):
 
 # from prmtop_text_sections['amber_atom_type'] select a unique set of atom types
 unique_types = list( set(prmtop_text_sections['amber_atom_type']) )
+unique_types.sort()
 num_unq_types =  len(unique_types)
 
 # capitalize all letters:
