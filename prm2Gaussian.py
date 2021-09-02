@@ -88,69 +88,27 @@ read_prm2Gaussian_inp = False
         
 ### ---------------------------------------------------------------------- ###
 ### Seting the file names                                                  ###
-# prmtop_file = sys.argv[1]
-# prmcrd_file = sys.argv[2]
-# g16_inp_file = sys.argv[3]
-# if len(sys.argv)>4:
-#     prm2Gaussian_inp_file = sys.argv[4]
-#     read_prm2Gaussian_inp = True
+prmtop_file = sys.argv[1]
+prmcrd_file = sys.argv[2]
+g16_inp_file = sys.argv[3]
+if len(sys.argv)>4:
+    prm2Gaussian_inp_file = sys.argv[4]
+    read_prm2Gaussian_inp = True
 
 ### ---------------------------------------------------------------------- ###
 ### test cases
 
-prmtop_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmtop'
-prmcrd_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmcrd'
-g16_inp_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo_2_09.mm.com'
-prm2Gaussian_inp_file = './pliki_do_testow/H6H/prm2gaussian.oniom.inp_mm'
-read_prm2Gaussian_inp = True
+# prmtop_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmtop'
+# prmcrd_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmcrd'
+# g16_inp_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo_2_09.mm.com'
+# prm2Gaussian_inp_file = './pliki_do_testow/H6H/prm2gaussian.oniom.inp_mm'
+# read_prm2Gaussian_inp = True
 
 # prmtop_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.prmtop'
 # prmcrd_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.rst7'
 # g16_inp_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.g16.com'
 # prm2Gaussian_inp_file = './pliki_do_testow/qm_ectc_core/ectc_prm2g.oniom.inp'
 # read_prm2Gaussian_inp = True
-
-# prmtop_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmtop'
-# prmcrd_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmcrd'
-# g16_inp_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo_17_07_b.com'
-# prm2Gaussian_inp_file = './pliki_do_testow/H6H/prm2gaussian.oniom.inp'
-# read_prm2Gaussian_inp = True
-        
-# prmtop_file = './pliki_do_testow/dihydroclavaminate/dihydroclavaminate.prmtop'
-# prmcrd_file = './pliki_do_testow/dihydroclavaminate/dihydroclavaminate.prmcrd'
-# g16_inp_file = './pliki_do_testow/dihydroclavaminate/dihydroclavaminate_21_04.com'
-
-# prmtop_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.nowat.prmtop'
-# prmcrd_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.nowat.prmcrd'
-# g16_inp_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.nowat_24_03.com'
-
-# prmtop_file = './pliki_do_testow/cellulose/NAG.prmtop'
-# prmcrd_file = './pliki_do_testow/cellulose/first_frame.rst7'
-# g16_inp_file = './pliki_do_testow/cellulose/first_frame.com'
-    
-# prmtop_file = './pliki_do_testow/2_atom_systems/coulomb/AB_coulomb.prmtop'
-# prmcrd_file = './pliki_do_testow/2_atom_systems/coulomb/AB_coulomb.prmcrd'
-# g16_inp_file = './pliki_do_testow/2_atom_systems/coulomb/AB_coulomb.com'
-
-# prmtop_file = './pliki_do_testow/4_atom_systems/ABCD_2.prmtop'
-# prmcrd_file = './pliki_do_testow/4_atom_systems/ABCD_2.prmcrd'
-# g16_inp_file = './pliki_do_testow/4_atom_systems/ABCD_2.com'
-
-# prmtop_file = './pliki_do_testow/n_butan/n_butan_1.prmtop'
-# prmcrd_file = './pliki_do_testow/n_butan/n_butan_1.prmcrd'
-# g16_inp_file = './pliki_do_testow/n_butan/n_butan_1.com'
-
-# prmtop_file = './pliki_do_testow/cl_prop/cl_prop.prmtop'
-# prmcrd_file = './pliki_do_testow/cl_prop/cl_prop.prmcrd'
-# g16_inp_file = './pliki_do_testow/cl_prop/cl_prop.com'
-
-# prmtop_file = './pliki_do_testow/c2h4/c2h4.prmtop'
-# prmcrd_file = './pliki_do_testow/c2h4/c2h4.prmcrd'
-# g16_inp_file = './pliki_do_testow/c2h4/c2h4.com'
-
-# prmtop_file = './pliki_do_testow/clcobr/clcobr.prmtop'
-# prmcrd_file = './pliki_do_testow/clcobr/clcobr.prmcrd'
-# g16_inp_file = './pliki_do_testow/clcobr/clcobr.com'
 
 ### ---------------------------------------------------------------------- ###
 ### Reading from prmtop file                                               ###
