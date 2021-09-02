@@ -114,6 +114,7 @@ This(these) type(s) has to be chosen by the user, the type corresponds to orygin
 ##################################
 ### Example input file content ###
 ##################################
+
 %qm_part
 sidechain 185 242 314 317 316 187 315
 residue 318
@@ -145,6 +146,7 @@ index
 
 %qm_charge 0
 %qm_multip 5
+
 ##################################
 ### End of example input file  ###
 ##################################
