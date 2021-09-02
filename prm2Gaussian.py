@@ -40,7 +40,7 @@ atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types)
 REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortranformat
     
 Created on Fri Oct  9 10:27:30 2020
-Last update on 17/07/2021
+Last update on 2/09/2021
 branch: master
 
 @author: borowski, wojdyla
@@ -88,15 +88,21 @@ read_prm2Gaussian_inp = False
         
 ### ---------------------------------------------------------------------- ###
 ### Seting the file names                                                  ###
-prmtop_file = sys.argv[1]
-prmcrd_file = sys.argv[2]
-g16_inp_file = sys.argv[3]
-if len(sys.argv)>4:
-    prm2Gaussian_inp_file = sys.argv[4]
-    read_prm2Gaussian_inp = True
+# prmtop_file = sys.argv[1]
+# prmcrd_file = sys.argv[2]
+# g16_inp_file = sys.argv[3]
+# if len(sys.argv)>4:
+#     prm2Gaussian_inp_file = sys.argv[4]
+#     read_prm2Gaussian_inp = True
 
 ### ---------------------------------------------------------------------- ###
 ### test cases
+
+prmtop_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmtop'
+prmcrd_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmcrd'
+g16_inp_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo_2_09.mm.com'
+prm2Gaussian_inp_file = './pliki_do_testow/H6H/prm2gaussian.oniom.inp_mm'
+read_prm2Gaussian_inp = True
 
 # prmtop_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.prmtop'
 # prmcrd_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.rst7'
@@ -689,8 +695,8 @@ if read_prm2Gaussian_inp:
         print("prm2Gaussian input file has been read ", datetime.datetime.now(), "\n")
 
 # set LAH atribute of LAH atoms
-for lk_atom in link_atoms:
-    atoms[lk_atom.get_index()].set_LAH(True)        
+    for lk_atom in link_atoms:
+        atoms[lk_atom.get_index()].set_LAH(True)        
 
 # set some key switch variables based on results of reading prm2Gaussian file
     if len(qm_part) > 0:
