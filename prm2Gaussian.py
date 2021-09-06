@@ -40,7 +40,7 @@ atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types)
 REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortranformat
     
 Created on Fri Oct  9 10:27:30 2020
-Last update on 2/09/2021
+Last update on 6/09/2021
 branch: master
 
 @author: borowski, wojdyla
@@ -812,7 +812,7 @@ for resid in residues:
 ### frozen, trimmed, qm_mm_free, qm_mm_frozen                              ###
 if ONIOM:
     qm_system = qm_part + link_atoms
-    qm_system.sort(key=lambda x: x.get_index(), reverse=True)
+    qm_system.sort(key=lambda x: x.get_index(), reverse=False)
     write_xyz_file(qm_system, 'QM_SYSTEM.xyz')
     write_xyz_file(qm_part, 'QM_PART.xyz')
 
