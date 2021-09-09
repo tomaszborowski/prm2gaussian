@@ -40,7 +40,7 @@ atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types)
 REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortranformat
     
 Created on Fri Oct  9 10:27:30 2020
-Last update on 6/09/2021
+Last update on 9/09/2021
 branch: master
 
 @author: borowski, wojdyla
@@ -369,6 +369,7 @@ for i in range(NUMBND):
         raws.append(raw)
     unique_raws_tup = set(tuple(row) for row in raws)
     unique_raws = [list(raw) for raw in unique_raws_tup]
+    unique_raws.sort()
     bonds_data = bonds_data + unique_raws
 
 # remove redundant data, e.g. one of the pair: (A-B), (B-A)
@@ -419,7 +420,8 @@ for i in range(NUMANG):
         raw = [i+1, atom_types, force_constant, equil_value, first_instance]
         raws.append(raw)
     unique_raws_tup = set(tuple(row) for row in raws)
-    unique_raws = [list(raw) for raw in unique_raws_tup]        
+    unique_raws = [list(raw) for raw in unique_raws_tup]
+    unique_raws.sort()        
     angles_data = angles_data + unique_raws
 
 # remove redundant data, e.g. one of the pair: (A-B-C), (C-B-A)
@@ -490,6 +492,7 @@ for i in range(NPTRA):
         
     unique_raws_tup = set(tuple(row) for row in raws)
     unique_raws = [list(raw) for raw in unique_raws_tup]
+    unique_raws.sort()
     dihedral_data = dihedral_data + unique_raws
 
 # split dihedral_data into proper_dihedral_data and improper_dihedral_data
@@ -868,26 +871,27 @@ empty_l = '\n'
 
 # header section    
 l1_g_input = '# Amber=(SoftOnly,Print) Geom=Connectivity \n'
-l1_g_oniom_input = '# ONIOM(UB3LYP/def2SVP EmpiricalDispersion=GD3BJ:Amber=SoftFirst) Geom=Connectivity\n\
+l1_g_oniom_input = '# ONIOM(UB3LYP/def2SVP EmpiricalDispersion=GD3BJ:Amber=SoftOnly) Geom=Connectivity\n\
 5d scf=(xqc,maxcycle=350) nosymm \n'
 
 l3_g_input = 'comment line \n'
 
-# calculate the total charge and round it to nearest integer value:
+# calculate the total charge for an un-trimmed model:
 tot_q = np.sum(prmtop_num_sections['charge'])
 tot_q_int = int(round(tot_q))
-print('Total charge of the system is: ', "{:.2e}".format(tot_q), ' , which is rounded to: ', tot_q_int)
-if VERBOSE:
-    print(datetime.datetime.now(), "\n")
 
 # for MM-only or real/low (ONIOM) model: assuming the total spin is singlet or dublet 
 # (does not have any meaning for pure FF calculations):
 nuclear_charge = 0    
 if TRIM_MODEL:
+    tot_q = 0.0
+    tot_q_int = 0
     for res in residues:
         if not res.get_trim():
             for at in res.get_atoms():
                 nuclear_charge += atm_number[at.get_element()]
+                tot_q += at.get_at_charge()
+    tot_q_int = int(round(tot_q))
     n_electrons = nuclear_charge - tot_q_int
 else:    
     n_electrons = np.sum(prmtop_num_sections['atomic_number']) - tot_q_int
@@ -896,6 +900,12 @@ if n_electrons % 2:
     mm_mul = 2
 else:
     mm_mul = 1
+
+# round the total charge to nearest integer value:
+print('Total charge of the system is: ', "{:.2e}".format(tot_q), ' , which is rounded to: ', tot_q_int)
+if VERBOSE:
+    print(datetime.datetime.now(), "\n")    
+
     
 l5_g_input = str(tot_q_int) + '    ' + str(mm_mul)  + '\n'
 if ONIOM:
