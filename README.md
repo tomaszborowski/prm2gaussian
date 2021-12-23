@@ -73,6 +73,16 @@ the trimming distance XX [in A] is specified in the line:
 %r_trim  XX
 
 D)
+%do_not_remove_when_trim
+...
+%end_do_not_remove_when_trim
+to specify residue names for residues which will not be removed by trimming even if all their atoms
+are in the "trimming zone"
+e.g.
+resname FE NGA
+
+
+E)
 %freeze_ref
 ...
 index
@@ -83,7 +93,7 @@ parts will be done
 the optimized zone distance YY [in A] is specified in the line:
 %r_free YY
 
-E)
+F)
 %qm_charge X
 %qm_multip Y
 to specify the total charge (X) and multiplicity (Y) of the QM subsystem of the ONIOM calculations.

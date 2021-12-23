@@ -40,8 +40,8 @@ atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types)
 REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortranformat
     
 Created on Fri Oct  9 10:27:30 2020
-Last update on 9/09/2021
-branch: master
+Last update on 23/12/2021
+branch: flex_truncate
 
 @author: borowski, wojdyla
 Report bugs to: tomasz.borowski@ikifp.edu.pl or zuzanna.wojdyla@ikifp.edu.pl
@@ -69,7 +69,8 @@ from oniom import atom, residue, peptide
 from oniom import generate_label, N_CO_in_residue, is_peptide_bond2
 from oniom import main_side_chain
 from oniom import read_single_number, input_read_qm_part, input_read_link_atoms
-from oniom import input_read_trim, input_read_freeze, atom_to_link_atom
+from oniom import input_read_trim_flex, input_read_freeze, atom_to_link_atom
+
 
 # CONSTANTS
 letters = string.ascii_uppercase
@@ -106,8 +107,10 @@ if len(sys.argv)>4:
 
 # prmtop_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.prmtop'
 # prmcrd_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.rst7'
-# g16_inp_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.g16.com'
-# prm2Gaussian_inp_file = './pliki_do_testow/qm_ectc_core/ectc_prm2g.oniom.inp'
+# #g16_inp_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.g16.23_12_21.ref.com'
+# #prm2Gaussian_inp_file = './pliki_do_testow/qm_ectc_core/ectc_prm2g.oniom.inp'
+# g16_inp_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.g16.23_12_21.flex.com'
+# prm2Gaussian_inp_file = './pliki_do_testow/qm_ectc_core/ectc_prm2g.oniom.flex_truncate.inp'
 # read_prm2Gaussian_inp = True
 
 ### ---------------------------------------------------------------------- ###
@@ -643,7 +646,8 @@ if read_prm2Gaussian_inp:
     
     qm_part = input_read_qm_part(prm2g, residues, atoms)
     link_atoms = input_read_link_atoms(prm2g, atoms)
-    trimmed = input_read_trim(prm2g, residues, atoms)
+#    trimmed = input_read_trim(prm2g, residues, atoms)
+    trimmed = input_read_trim_flex(prm2g, residues, atoms)
     frozen = input_read_freeze(prm2g, residues, atoms)
     
     qm_chg = read_single_number(prm2g, "%qm_charge")

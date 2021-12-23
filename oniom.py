@@ -6,6 +6,8 @@ ONIOM input generation from parsed (Amber) prmtop
 and prmcrd (rst7) files.
 
 Created on Mon Apr 19 08:35:15 2021
+Last update on 23/12/2021
+branch: flex_truncate
 
 @author: borowski
 """
@@ -360,7 +362,12 @@ def residues_within_r_from_atom_list(residue_list, atom_list, r):
     """ 
     checks if any atom of residue from a residue_list 
     lies within r (d(at@res --- atom) <= r) of any atom from atom_list;
-    returns a boolean list of length len(residue_list)
+    Input:
+        residue_list - a list of residue objects
+        atom_list - a list of atom objects
+        r - radius, float 
+    Returns: 
+        a boolean list of length len(residue_list)
     """
     res_list_length = len(residue_list)
     if len(atom_list) == 0:
@@ -453,6 +460,44 @@ def read_rsi_index(file, flag_line, end_line):
                 temp_2 = list(temp)
                 lista = temp_2.sort()
     return residue_index, sidechain_index, index_index
+
+def read_rsi_names(file, flag_line, end_line):
+    """reads residue names contained between lines starting with flag_line
+    and end_line from file 
+    ---
+    file : file object
+    flag_line : string
+    end_line : strong
+    ---
+    Returns a list:
+    residue_names 
+    """
+    residue_names = []
+    # w pliku file wyszukaj linii zawierajacej flag_line
+    file.seek(0)
+    while True:
+        a = file.readline()
+        if not a:
+            break
+        match_flag=re.search(flag_line,a)
+        if match_flag:            
+            # wczytuj kolejne linie i sprawdzaj czy zawieraja "resname"
+            while True:
+                a = file.readline()
+                if not a:
+                    break
+                elif re.search(end_line,a):
+                    break
+                match_residue=re.search("resname",a)
+                if match_residue:                            
+                    temp = a.split()
+                    temp.remove('resname')
+                    for item in temp:
+                        residue_names.append(item)
+    temp = set(residue_names)
+    temp_2 = list(temp)
+    temp_2.sort()
+    return residue_names
 
 def input_read_qm_part(file, residues, atoms):
     """
@@ -614,6 +659,79 @@ at least one atom within: ',r_trim,' A from the above reference \n')
                 resid.set_trim(True)
                 trimmed.append(resid)
     return trimmed 
+
+def input_read_trim_flex(file, residues, atoms):
+    """
+    Reads trim data from the prm2Gaussian input file
+    Sets the trim atribute of residues to be removed to True 
+    Returns a list trimmed with residue objects with trim = True
+    (the list is sorted wrt residue index)
+    This function reads resnames of residues which shall not be removed
+    even in all their atoms are in the "trim" zone; reads it from file
+    from section %do_not_remove_when_trim ... %end_do_not_remove_when_trim
+    ----
+    file : file object
+    residues : a list with residue obects for the system
+    atoms : a list with atom objects for the system
+    """   
+    assert (type(residues) == list), "residues must be a list of residue objects"
+    assert (type(atoms) == list), "atoms must be a list of atom objects"
+    # inicjalizacja pustej listy (na obiekty typu atom), ktora bedzie zwracana     
+    trimmed = []
+    trim_reference = []
+    r_trim = read_single_number(file,"%r_trim")
+    residue_index,sidechain_index,index_index = read_rsi_index(file, "%trim_ref", "%end_trim_ref")
+    res_names_not_to_trim = read_rsi_names(file, "%do_not_remove_when_trim", "%end_do_not_remove_when_trim")
+    if not res_names_not_to_trim:
+        res_not_to_trim = False
+    elif len(res_names_not_to_trim) > 0:
+        res_not_to_trim = True
+    if (len(residue_index) + len(sidechain_index) + len(index_index))>0:
+        print('\nThe reference with respect to which TRIMMING will be done consist of: ')
+        print('residues: ',residue_index)
+        print('and sidechains: ',sidechain_index)
+        print('and atoms: ',index_index)
+        if not res_not_to_trim:
+            print('\nAll protein atoms will be retained PLUS atoms of other residues with \
+                  at least one atom within: ',r_trim,' A from the above reference \n')
+        else:
+            print('\nAll protein atoms and atoms of residues listed below will be retained \
+                  PLUS atoms of other residues with at least one atom within: ',r_trim,' A \
+                  from the above reference \n')
+            print('\nResidue names of residues not removed even if they have all atoms further\
+                  away than the trim radius: \n', res_names_not_to_trim)
+        for i in residue_index:
+            if residues[i]:
+                for at in residues[i].get_atoms():
+                    trim_reference.append(at)
+            else:
+                print('\n Residue list does not have residue with index: ',i, '\n')
+        for i in sidechain_index:
+            if residues[i]:
+                for at in residues[i].get_atoms():
+                    if not at.get_in_mainchain():
+                        trim_reference.append(at)
+            else:
+                print('\n Residue list does not have residue with index: ',i, '\n')
+        for i in index_index:
+            if atoms[i]:
+                trim_reference.append(atoms[i])
+            else:
+                print('\n Atom list does not have atom with index: ',i, '\n')
+        temp = set(trim_reference)
+        trim_reference = list(temp)
+        trim_reference.sort(key=lambda x: x.get_index(), reverse=True)
+            
+        within_resids_bool = residues_within_r_from_atom_list(residues, trim_reference, r_trim)
+        for w,resid in zip(within_resids_bool,residues):
+            if w or resid.get_in_protein():
+                resid.set_trim(False)
+            elif (res_not_to_trim and (not w) and (resid.get_label() in res_names_not_to_trim)):
+                resid.set_trim(False)
+            else:
+                resid.set_trim(True)
+                trimmed.append(resid)
+    return trimmed
 
 def input_read_freeze(file, residues, atoms):
     """
