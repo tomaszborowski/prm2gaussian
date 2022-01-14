@@ -49,53 +49,53 @@ e) specify charge and multiplicity for the QM part of the QM/MM model.
 
 The input file can contain the following sections:
 
-A)
-%qm_part
-...
-%end_qm_part
+A)  
+%qm_part  
+...  
+%end_qm_part  
 to specify the QM-part of the ONIOM(QM:Amber) QM/MM system
 
 B) 
-%link_atoms
-...
-%end_link_atoms
+%link_atoms  
+...  
+%end_link_atoms  
 to specify which atoms are to be replaced by hydrogen link atoms in QM computations as part of the ONIOM
 calculations
 
-C)
-%trim_ref
-...
-%end_trim_ref
+C)  
+%trim_ref  
+...  
+%end_trim_ref  
 to specify atoms with respect to which a distance-based trimming of the model (non-protein residues) 
 will be done
 
-the trimming distance XX [in A] is specified in the line:
+the trimming distance XX [in A] is specified in the line:  
 %r_trim  XX
 
 D)
-%do_not_remove_when_trim
-...
-%end_do_not_remove_when_trim
+%do_not_remove_when_trim  
+...  
+%end_do_not_remove_when_trim  
 to specify residue names for residues which will not be removed by trimming even if all their atoms
-are in the "trimming zone"
+are in the "trimming zone"  
 e.g.
 resname FE NGA
 
 
 E)
-%freeze_ref
-...
-index
-%end_freeze_ref
+%freeze_ref  
+...  
+index  
+%end_freeze_ref  
 to specify atoms with respect to which a distance-based partitioning of the model into optimized and frozen
 parts will be done
 
-the optimized zone distance YY [in A] is specified in the line:
+the optimized zone distance YY [in A] is specified in the line:  
 %r_free YY
 
 F)
-%qm_charge X
-%qm_multip Y
+%qm_charge X  
+%qm_multip Y  
 to specify the total charge (X) and multiplicity (Y) of the QM subsystem of the ONIOM calculations.
 The same multiplicity (Y) will be used for other ONIOM sub-calculations. 
 
@@ -125,37 +125,37 @@ This(these) type(s) has to be chosen by the user, the type corresponds to orygin
 ### Example input file content ###
 ##################################
 
-%qm_part
-sidechain 185 242 314 317 316 187 315
-residue 318
-index 
-%end_qm_part
+%qm_part  
+sidechain 185 242 314 317 316 187 315  
+residue 318  
+index   
+%end_qm_part  
 
 
-%link_atoms
-index 3896 2984 3022
-type HC HC HC
-%end_link_atoms
+%link_atoms  
+index 3896 2984 3022  
+type HC HC HC  
+%end_link_atoms  
 
 
-%trim_ref
-sidechain 185 242 314 317 316 187 315
-residue 318
-index
-%end_trim_ref
-%r_trim 20
+%trim_ref  
+sidechain 185 242 314 317 316 187 315  
+residue 318  
+index  
+%end_trim_ref  
+%r_trim 20  
 
 
-%freeze_ref
-sidechain 185 242 314 317 316 187 315
-residue 318
-index
-%end_freeze_ref
-%r_free 15
+%freeze_ref  
+sidechain 185 242 314 317 316 187 315  
+residue 318  
+index  
+%end_freeze_ref  
+%r_free 15  
 
 
-%qm_charge 0
-%qm_multip 5
+%qm_charge 0  
+%qm_multip 5  
 
 ##################################
 ### End of example input file  ###
@@ -173,21 +173,21 @@ prm2Gaussian.py h6h-oxo+succinate+water_hyo.prmtop h6h-oxo+succinate+water_hyo.p
 
 
 The script generates a set of files, which can be useful for checking if the model partitioning is as required. 
-These files are:
-QM_SYSTEM.xyz
-QM_PART.xyz
-MM_LA.xyz
-TRIMMED.xyz
-FROZEN.xyz
-MODEL.xyz
-MODEL.pdb
+These files are:  
+QM_SYSTEM.xyz  
+QM_PART.xyz  
+MM_LA.xyz  
+TRIMMED.xyz  
+FROZEN.xyz  
+MODEL.xyz  
+MODEL.pdb  
 
-In MODEL.pdb:
-- QM atoms have beta = 2.0, 
-- LAH have beta = 1.0, 
-- other MM atoms have beta = 0.0
-- frozen atoms have occupancy = 0
-- optimized atoms have occupancy = 1
+In MODEL.pdb: 
+- QM atoms have beta = 2.0,  
+- LAH have beta = 1.0,  
+- other MM atoms have beta = 0.0  
+- frozen atoms have occupancy = 0  
+- optimized atoms have occupancy = 1  
 
 
 REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortranformat

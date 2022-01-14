@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Apr 22 07:53:26 2021
-
 This is a collection of functions for prm2Gaussian
 
-@author: borowski
+Last update on 14/01/2022
+@authors: borowski, wojdyla
 """
 import numpy as np
 
@@ -262,3 +261,31 @@ def write_pdb_file(residue_list, file_name):
         else:
             pass
     pdb_file.close()    
+    
+
+def gen_connectivity_line(ind, lista):
+    """
+    takes a list lista of indices (zero-based) of atoms bonded to a given atom of
+    (zero-based) index ind and returns a string formated as a line of connectivity
+    section of Gaussian input file. 
+    All bond orders are set as 1.0
+
+    Parameters
+    ----------
+    ind : (zero-based) index of a given atom
+    lista : list of indices of atoms bonded to a given atom
+
+    Returns
+    -------
+    connect_line - string variable 
+
+    """
+    sep = ' '
+    b_ord = '1.0'
+    connect_line = sep + str(ind + 1) + sep
+    for i in range(len(lista)):
+        connect_line = connect_line + str(lista[i] + 1) + sep + b_ord + sep
+    connect_line = connect_line + '\n'
+    return connect_line
+
+

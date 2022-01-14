@@ -39,11 +39,9 @@ atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types)
 
 REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortranformat
     
-Created on Fri Oct  9 10:27:30 2020
-Last update on 23/12/2021
-branch: flex_truncate
+Last update on 14/01/2022
 
-@author: borowski, wojdyla
+@authors: borowski, wojdyla
 Report bugs to: tomasz.borowski@ikifp.edu.pl or zuzanna.wojdyla@ikifp.edu.pl
 """
 import sys
@@ -56,14 +54,12 @@ from prm2Gaussian_functions import rad_to_deg, coord_to_atom_index, remove_redun
 from prm2Gaussian_functions import remove_eq_imp, remove_eq_dih, is_3rd_atom_central
 from prm2Gaussian_functions import adjust_HLA_coords, write_xyz_file, res2atom_lists
 from prm2Gaussian_functions import not_trimmed_res2atom_lists, write_xyz_file_MM_LA
-from prm2Gaussian_functions import write_pdb_file
+from prm2Gaussian_functions import write_pdb_file, gen_connectivity_line
 
 from read_prmtop import prmtop_read_pointers, prmtop_read_text_section
 from read_prmtop import prmtop_read_numeric_section, crd_read_coordinates
 from read_prmtop import atm_mass, atm_number, at_num_symbol
 from read_prmtop import LEGIT_TEXT_FLAGS, LEGIT_NUM_FLAGS
-
-from connectivity_list import gen_connectivity_line
 
 from oniom import atom, residue, peptide
 from oniom import generate_label, N_CO_in_residue, is_peptide_bond2
@@ -96,22 +92,6 @@ if len(sys.argv)>4:
     prm2Gaussian_inp_file = sys.argv[4]
     read_prm2Gaussian_inp = True
 
-### ---------------------------------------------------------------------- ###
-### test cases
-
-# prmtop_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmtop'
-# prmcrd_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo.prmcrd'
-# g16_inp_file = './pliki_do_testow/H6H/h6h-oxo+succinate+water_hyo_2_09.mm.com'
-# prm2Gaussian_inp_file = './pliki_do_testow/H6H/prm2gaussian.oniom.inp_mm'
-# read_prm2Gaussian_inp = True
-
-# prmtop_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.prmtop'
-# prmcrd_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.rst7'
-# #g16_inp_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.g16.23_12_21.ref.com'
-# #prm2Gaussian_inp_file = './pliki_do_testow/qm_ectc_core/ectc_prm2g.oniom.inp'
-# g16_inp_file = './pliki_do_testow/qm_ectc_core/5onn_1686_nga_c2_n2_2_76.g16.23_12_21.flex.com'
-# prm2Gaussian_inp_file = './pliki_do_testow/qm_ectc_core/ectc_prm2g.oniom.flex_truncate.inp'
-# read_prm2Gaussian_inp = True
 
 ### ---------------------------------------------------------------------- ###
 ### Reading from prmtop file                                               ###
@@ -532,12 +512,6 @@ if VERBOSE:
 
 
 # extracting atomic vdW parameters:
-    
-# for each atom type:   
-    # find atom index for atom of this type and a pointer to lennard_jones_a(b) coef for 
-    # the pair: this type, this type
-    # read A and B and convert into epsilon and r_m
-#
 # epsilon and r_min are dictionaries with amber atom types as keys and
 # epsilon and r_min values, respectively
 epsilon = {}
@@ -565,7 +539,6 @@ for type in unique_types:
 
 if VERBOSE:    
     print("epsilon and r_min created ", datetime.datetime.now(), "\n")
-
 
 
 ### ------------------------------------------------------------------------- ###

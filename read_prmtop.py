@@ -4,6 +4,9 @@ This is a collection of functions to parse (Amber) prmtop
 and prmcrd (rst7) files.
 
 requires fortranformat (to install: pip install fortranformat)
+
+Last update on 14/01/2022
+@authors: borowski, wojdyla
 """
 import re
 import fortranformat as ff

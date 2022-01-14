@@ -5,11 +5,8 @@ This is a collection of functions and classes to aid
 ONIOM input generation from parsed (Amber) prmtop 
 and prmcrd (rst7) files.
 
-Created on Mon Apr 19 08:35:15 2021
-Last update on 23/12/2021
-branch: flex_truncate
-
-@author: borowski
+Last update on 14/01/2022
+@authors: borowski, wojdyla
 """
 import string
 import numpy as np
