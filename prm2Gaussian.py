@@ -233,6 +233,7 @@ for i in range(NATOM):
 # check if atom types are all unique and start with a letter when CAPITALIZED 
 # G16 does not accepts types starting with numbers and does not distinguish small
 # and capital letters, using ' ' or " " does not help (for G09 the latter worked)            
+# for types ending with a minus sign "-" change "-" to "_" 
 
 # from prmtop_text_sections['amber_atom_type'] select a unique set of atom types
 unique_types = list( set(prmtop_text_sections['amber_atom_type']) )
@@ -244,14 +245,22 @@ unique_types_CAP = []
 for atom_type in unique_types:
     unique_types_CAP.append(atom_type.upper())
 
-# for type starting with a digit add 'A' at the front: 
+# for type starting with a digit add 'A' at the front;
+# for type ending with "-" replace "-" with "_" 
 unique_types_temp = []
 for atom_type in unique_types_CAP:
-    if atom_type[0] in digits:
+    if atom_type[0] in digits and atom_type[-1] == "-":
+        new_atom_type = 'A' + atom_type[0:-1] + "_"
+        unique_types_temp.append(new_atom_type)
+    elif atom_type[-1] == "-":
+        new_atom_type = atom_type[0:-1] + "_"
+        unique_types_temp.append(new_atom_type)
+    elif atom_type[0] in digits:
         new_atom_type = 'A' + atom_type
         unique_types_temp.append(new_atom_type)
     else:
         unique_types_temp.append(atom_type)
+
 
 # test for repeating type symbols and append letters from letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
 unique_types_NEW = unique_types_temp.copy()       
