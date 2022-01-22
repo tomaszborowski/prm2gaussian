@@ -208,7 +208,7 @@ def not_trimmed_res2atom_lists(residues):
                 atm_list.append(at)
     return atm_list
 
-def write_pdb_file(residue_list, file_name):
+def write_pdb_file(residue_list, file_name, write_Q=False):
     """writes a PDB file with a name file_name
     residue_list - a list of residue objects 
     only residues with trim=False are written to the file"""
@@ -249,7 +249,10 @@ def write_pdb_file(residue_list, file_name):
             line = 'ATOM' + '  ' + at_number + ' ' +\
             at_name + ' ' + resid_name + '  ' + resid_number + '    ' +\
             '{:8.3f}'.format(at_coord[0]) + '{:8.3f}'.format(at_coord[1]) + '{:8.3f}'.format(at_coord[2]) +\
-            '{:6.2f}'.format(at_occupancy) + '{:6.2f}'.format(at_beta) + '    ' + ele + ' ' + '{:5.3f}'.format(at_charge) + '\n'            
+            '{:6.2f}'.format(at_occupancy) + '{:6.2f}'.format(at_beta) + '    ' + ele            
+            if write_Q:
+                line = line + ' ' + '{:5.3f}'.format(at_charge)
+            line = line + '\n'
             pdb_file.write(line)
         if residue.get_new_index() == 0:
             prev_resid_chain = residue.get_chain()

@@ -39,7 +39,7 @@ atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types)
 
 REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortranformat
     
-Last update on 14/01/2022
+Last update on 22/01/2022
 
 @authors: borowski, wojdyla
 Report bugs to: tomasz.borowski@ikifp.edu.pl or zuzanna.wojdyla@ikifp.edu.pl
@@ -81,7 +81,7 @@ TRIM_MODEL = False
 ONIOM = False
 FREEZE = False
 read_prm2Gaussian_inp = False
-
+write_Q = False # if atomic charges shall be written as the last column in the pdb file
         
 ### ---------------------------------------------------------------------- ###
 ### Seting the file names                                                  ###
@@ -819,7 +819,10 @@ if FREEZE:
 if (ONIOM or TRIM_MODEL or FREEZE):
     model = not_trimmed_res2atom_lists(residues)
     write_xyz_file(model, 'MODEL.xyz')
-    write_pdb_file(residues, 'MODEL.pdb')
+    if write_Q:
+        write_pdb_file(residues, 'MODEL.pdbq', write_Q)
+    else:
+        write_pdb_file(residues, 'MODEL.pdb', write_Q)
 else:
     xyz_file = open('MODEL.xyz', 'w')
     xyz_file.write(str(NATOM)+'\n')
