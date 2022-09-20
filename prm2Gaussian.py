@@ -92,7 +92,6 @@ if len(sys.argv)>4:
     prm2Gaussian_inp_file = sys.argv[4]
     read_prm2Gaussian_inp = True
 
-
 ### ---------------------------------------------------------------------- ###
 ### Reading from prmtop file                                               ###
 

@@ -5,7 +5,7 @@ This is a collection of functions and classes to aid
 ONIOM input generation from parsed (Amber) prmtop 
 and prmcrd (rst7) files.
 
-Last update on 14/01/2022
+Last update on 20/09/2022
 @authors: borowski, wojdyla
 """
 import string
@@ -214,19 +214,19 @@ def main_side_chain(residue):
     """ determined which atoms are in the mainchain in a residue
     looks for N-C-C-O fragment and then H atoms bound to N or C
     and O atom bound to the second C 
-    when found sets in_mainchain atribute of these atoms to True
+    when found, sets in_mainchain atribute of these atoms to True
     and adds them into main_chain_atoms list of this residue """
     for at1 in residue.get_atoms():
-        if at1.get_element() == 'N':
+        if (at1.get_element() == 'N') and (at1.get_name() == 'N'):
             at1_connect = at1.get_connect_list()
             for at2 in residue.get_atoms():
-                if at2.get_element() == 'C' and at2.get_index() in at1_connect:
+                if (at2.get_element() == 'C') and (at2.get_index() in at1_connect) and (at2.get_name() == 'CA'):
                     at2_connect = at2.get_connect_list()
                     for at3 in residue.get_atoms():
-                        if at3.get_element() == 'C' and at3.get_index() in at2_connect:
+                        if (at3.get_element() == 'C') and (at3.get_index() in at2_connect) and (at3.get_name() == 'C'):
                             at3_connect = at3.get_connect_list()
                             for at4 in residue.get_atoms():
-                                if at4.get_element() == 'O' and at4.get_index() in at3_connect:
+                                if (at4.get_element() == 'O') and (at4.get_index() in at3_connect) and (at4.get_name() == 'O'):
                                     for at in [at1, at2, at3, at4]:
                                         at.set_in_mainchain(True)
                                         if at not in residue.get_main_chain_atoms():
