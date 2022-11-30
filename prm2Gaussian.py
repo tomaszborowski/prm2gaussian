@@ -39,7 +39,7 @@ atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types)
 
 REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortranformat
     
-Last update on 22/01/2022
+Last update on 30/11/2022
 
 @authors: borowski, wojdyla
 Report bugs to: tomasz.borowski@ikifp.edu.pl or zuzanna.wojdyla@ikifp.edu.pl
@@ -950,7 +950,7 @@ else:
                         el = lk_at.get_element()
                         tp = lk_at.get_new_type()
                         chg = lk_at.get_at_charge()
-                        bto = lk_at.get_bonded_to() + 1 # shift from 0- to 1- based indexing
+			bto = old_new_at_ix[ lk_at.get_bonded_to() ] + 1 # shift from 0- to 1- based indexing
                         extra = el + '-' + tp + '-' + '{:02.6f}'.format(chg) + '\t' + str(bto)
                         line = line + '  ' + extra
                     line = line + '\n'
