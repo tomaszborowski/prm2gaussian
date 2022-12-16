@@ -950,7 +950,7 @@ else:
                         el = lk_at.get_element()
                         tp = lk_at.get_new_type()
                         chg = lk_at.get_at_charge()
-			bto = old_new_at_ix[ lk_at.get_bonded_to() ] + 1 # shift from 0- to 1- based indexing
+                        bto = old_new_at_ix[ lk_at.get_bonded_to() ] + 1 # shift from 0- to 1- based indexing
                         extra = el + '-' + tp + '-' + '{:02.6f}'.format(chg) + '\t' + str(bto)
                         line = line + '  ' + extra
                     line = line + '\n'
