@@ -3,8 +3,9 @@
 """
 This is a collection of functions for prm2Gaussian
 
-Last update on 14/01/2022
 @authors: borowski, wojdyla
+Last update on 14/01/2022
+Last update on 18/05/2023
 """
 import numpy as np
 
@@ -54,9 +55,11 @@ def remove_redundant_data(data,at_ix):
                 data_non_redund.append(data[i])
     return data_non_redund
 
+
 def remove_eq_imp(imp_data):
     """ 
-    improper angles A-B-X-Y and B-A-X-Y are equivalent, Gaussian expects only one of them;
+    improper angles A-B-X-Y, B-A-X-Y, Y-A-X-B, A-Y-X-B, B-Y-X-A and Y-B-X-A are all equivalent, 
+    Gaussian expects only one of them;
     this function reads imp_data (a list), and returns a list (imp_data_no_eq) with one such 
     if such redundancy is encountered.
     INPUT:    
@@ -71,11 +74,16 @@ def remove_eq_imp(imp_data):
         i = 0
         while i < data_length:
             raw_i = imp_data[i]
+            raw_i_3rd = raw_i[3][2]
+            raw_i_124 = [raw_i[3][0], raw_i[3][1], raw_i[3][3]]
+            raw_i_124s = set(raw_i_124)
             j = i + 1
             while j < data_length:
                 raw_j = imp_data[j]
-                if (raw_i[3][2:4] == raw_j[3][2:4]) and (raw_i[3][0] == raw_j[3][1])\
-                    and (raw_i[3][1] == raw_j[3][0]):
+                raw_j_3rd = raw_j[3][2]
+                raw_j_124 = [raw_j[3][0], raw_j[3][1], raw_j[3][3]]
+                raw_j_124s = set(raw_j_124)  
+                if (raw_i_3rd == raw_j_3rd) and (raw_i_124s == raw_j_124s):
                      aux_non_redundant[j] = False        
                 j += 1
             i += 1
@@ -83,7 +91,8 @@ def remove_eq_imp(imp_data):
         for i in range(data_length):
             if aux_non_redundant[i]:
                 imp_data_no_eq.append(imp_data[i])
-    return imp_data_no_eq    
+    return imp_data_no_eq  
+
 
 def remove_eq_dih(dih_data):
     """ 

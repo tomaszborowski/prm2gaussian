@@ -44,7 +44,7 @@ Report bugs to: tomasz.borowski@ikifp.edu.pl or zuzanna.wojdyla@ikifp.edu.pl
 Last update on 30/11/2022
 Last update on 18/05/2023
 """
-import sys
+import sys, os
 import numpy as np
 import pandas as pd
 import datetime
@@ -114,15 +114,23 @@ if prmtop_file == "-h":
     sys.exit(1)
 
 if prmtop_file == None:
-    print("prmtop file name must be provided as #1 argument \n")
+    print("prmtop file, prmcrd/rst7 and gaussian file names must be provided as arguments \n")
     sys.exit(1)
 
 if prmcrd_file == None:
-    print("prmcrd/rst7 file name must be provided as #2 argument \n")
+    print("prmcrd/rst7 and gaussian file names must be provided as #2 and #3 arguments \n")
     sys.exit(1)
 
 if g16_inp_file == None:
     print("name of Gaussian input file to be generated must be provided as #3 argument \n")
+    sys.exit(1)
+
+if not os.path.isfile(prmtop_file):
+    print("prmtop file: " + prmtop_file + " not found \n")
+    sys.exit(1)
+
+if not os.path.isfile(prmcrd_file):
+    print("prmcrd/rst7 file: " + prmcrd_file + " not found \n")
     sys.exit(1)
 
 ### ---------------------------------------------------------------------- ###
@@ -226,7 +234,7 @@ if natom_crd != NATOM:
     print("ATTANTION, the number of atoms read from prmtop and prmcrd(rst7) files DO NOT MATCH !!!\n")
     print("from prmtop: ", NATOM, " \n")
     print("from prmcrd: ", natom_crd, " \n")
-    
+    sys.exit(1)
 
 ### ---------------------------------------------------------------------- ###
 ### Processing the prmtop data                                             ###
