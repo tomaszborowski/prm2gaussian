@@ -292,3 +292,17 @@ def gen_connectivity_line(ind, lista):
     return connect_line
 
 
+def print_help():  
+    help_text = """
+prm2Gaussian script: 
+reads Amber prmtop and prmcrd(rst7) files and writes
+Gaussian16 Amber=softonly or ONIOM(QM,Amber=softonly) input file
+
+The script expects 3 file names as command line arguments:
+            #1 prmtop file
+            #2 prmcrd(rst7) file
+            #3 output G16 input file
+optional    #4 input file for this script  
+    """
+    
+    print(help_text)

@@ -39,10 +39,10 @@ atom type for H-link atoms is set to be 'HC' (before mapping to the G16 types)
 
 REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortranformat
     
-Last update on 30/11/2022
-
 @authors: borowski, wojdyla
 Report bugs to: tomasz.borowski@ikifp.edu.pl or zuzanna.wojdyla@ikifp.edu.pl
+Last update on 30/11/2022
+Last update on 18/05/2023
 """
 import sys
 import numpy as np
@@ -54,7 +54,7 @@ from prm2Gaussian_functions import rad_to_deg, coord_to_atom_index, remove_redun
 from prm2Gaussian_functions import remove_eq_imp, remove_eq_dih, is_3rd_atom_central
 from prm2Gaussian_functions import adjust_HLA_coords, write_xyz_file, res2atom_lists
 from prm2Gaussian_functions import not_trimmed_res2atom_lists, write_xyz_file_MM_LA
-from prm2Gaussian_functions import write_pdb_file, gen_connectivity_line
+from prm2Gaussian_functions import write_pdb_file, gen_connectivity_line, print_help
 
 from read_prmtop import prmtop_read_pointers, prmtop_read_text_section
 from read_prmtop import prmtop_read_numeric_section, crd_read_coordinates
@@ -85,12 +85,45 @@ write_Q = False # if atomic charges shall be written as the last column in the p
         
 ### ---------------------------------------------------------------------- ###
 ### Seting the file names                                                  ###
-prmtop_file = sys.argv[1]
-prmcrd_file = sys.argv[2]
-g16_inp_file = sys.argv[3]
-if len(sys.argv)>4:
+sys_argv_len = len(sys.argv)
+if sys_argv_len > 1:
+    prmtop_file = sys.argv[1]
+else:
+    prmtop_file = None
+
+if sys_argv_len > 2:
+    prmcrd_file = sys.argv[2]
+else:
+    prmcrd_file = None
+    
+if sys_argv_len > 3:
+    g16_inp_file = sys.argv[3]
+else:
+    g16_inp_file = None
+
+if sys_argv_len > 4:
     prm2Gaussian_inp_file = sys.argv[4]
     read_prm2Gaussian_inp = True
+else:
+    prm2Gaussian_inp_file = None
+    read_prm2Gaussian_inp = False
+
+### if -h - write help and exit                                            ###
+if prmtop_file == "-h":
+    print_help()
+    sys.exit(1)
+
+if prmtop_file == None:
+    print("prmtop file name must be provided as #1 argument \n")
+    sys.exit(1)
+
+if prmcrd_file == None:
+    print("prmcrd/rst7 file name must be provided as #2 argument \n")
+    sys.exit(1)
+
+if g16_inp_file == None:
+    print("name of Gaussian input file to be generated must be provided as #3 argument \n")
+    sys.exit(1)
 
 ### ---------------------------------------------------------------------- ###
 ### Reading from prmtop file                                               ###
