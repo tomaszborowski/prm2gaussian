@@ -1,9 +1,0 @@
-README.md
-prm2Gaussian.py
-setup.py
-prm2gaussian.egg-info/PKG-INFO
-prm2gaussian.egg-info/SOURCES.txt
-prm2gaussian.egg-info/dependency_links.txt
-prm2gaussian.egg-info/entry_points.txt
-prm2gaussian.egg-info/top_level.txt
-tests/test_read_prmtop.py
