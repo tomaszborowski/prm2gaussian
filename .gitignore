@@ -8,6 +8,7 @@ pliki_do_testow/
 starsze/
 test_energie.ods
 test_timings.ods
+
 .venv
 .github
 .pytest_cache
