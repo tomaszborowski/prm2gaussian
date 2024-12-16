@@ -9,4 +9,11 @@ starsze/
 test_energie.ods
 test_timings.ods
 .venv
-example
+.github
+.pytest_cache
+tests
+prm2Gaussian.egg-info
+example/
+*.pdb
+*.xyz
+example/
