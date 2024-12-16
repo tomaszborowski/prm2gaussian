@@ -10,10 +10,8 @@ test_energie.ods
 test_timings.ods
 
 .venv
-.github/
 .pytest_cache/
-tests/
+
 prm2Gaussian.egg-info/
-example/
-*.pdb
-*.xyz
+examples/
+tests/
