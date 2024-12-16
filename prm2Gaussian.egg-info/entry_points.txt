@@ -1,0 +1,2 @@
+[console_scripts]
+prm2gaussian = prm2Gaussian:main
