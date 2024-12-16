@@ -35,8 +35,9 @@ and Gaussian, the improper energies computed by the two programms will differ sl
 ###############
 Clone the repository and install dependencies using pip:
 ```bash
-git clone https://github.com/AhmedHassanin-IPB/prm2gaussian.git
+git clone https://github.com/tomaszborowski/prm2gaussian.git
 pip install -r requirements.txt
+pip install -e .
 ```
 
 
