@@ -10,3 +10,7 @@ starsze/
 test_energie.ods
 test_timings.ods
 tests/
+
+.venv
+.pytest_cache/
+examples/

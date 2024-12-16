@@ -31,6 +31,17 @@ files. Note that due to a subtle difference in the way improper terms are calcul
 and Gaussian, the improper energies computed by the two programms will differ slightly. 
 
 ###############
+## Installation
+###############
+Clone the repository and install dependencies using pip:
+```bash
+git clone https://github.com/tomaszborowski/prm2gaussian.git
+pip install -r requirements.txt
+pip install -e .
+```
+
+
+###############
 ## An example how to use the script to generate the Gaussian MM input for the whole system:
 ###############
 
