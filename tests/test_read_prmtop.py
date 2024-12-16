@@ -1,7 +1,5 @@
 import io
-
 import pytest
-
 from read_prmtop import prmtop_read_numeric_section
 
 def test_prmtop_read_numeric_section_valid():

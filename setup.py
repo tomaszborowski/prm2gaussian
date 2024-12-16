@@ -6,12 +6,12 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'prm2Gaussian=prm2Gaussian:main',  # Add this line
+            'prm2Gaussian=prm2Gaussian:main',
         ],
     },
     author='tomaszborowski',
     author_email='tomasz.borowski@ikifp.edu.pl',
-    description='prm2gaussian',
+    description='prm2Gaussian: A tool for converting amber topology file to Gaussian-Oniom input files',
     url='https://github.com/tomaszborowski/prm2gaussian',
     classifiers=[
         'Programming Language :: Python :: 3',
