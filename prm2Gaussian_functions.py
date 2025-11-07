@@ -4,8 +4,8 @@
 This is a collection of functions for prm2Gaussian
 
 @authors: borowski, wojdyla
-Last update on 14/01/2022
 Last update on 18/05/2023
+Last update on 7/11/2025
 """
 import numpy as np
 
@@ -230,7 +230,10 @@ def write_pdb_file(residue_list, file_name, write_Q=False):
     for residue in residue_list_no_trim:
         resid_name = residue.get_label()
         resid_name = resid_name.rjust(3, ' ')
-        resid_number = str(residue.get_new_index() + 1)
+        if residue.get_new_index():
+            resid_number = str(residue.get_new_index() + 1)
+        else:
+            resid_number = str(residue.get_index() + 1)
         resid_number = resid_number.rjust(4, ' ')
         for atom in residue.get_atoms():
             ele = atom.get_element()
@@ -238,7 +241,10 @@ def write_pdb_file(residue_list, file_name, write_Q=False):
             at_coord = atom.get_coords()
             at_name = atom.get_name()
             at_name = at_name.ljust(4, ' ')
-            at_number = atom.get_new_index() + 1
+            if atom.get_new_index():
+                at_number = atom.get_new_index() + 1
+            else:
+                at_number = atom.get_index() + 1
             at_number = str(at_number)
             at_number = at_number.rjust(5, ' ')
             at_layer = atom.get_oniom_layer()
@@ -263,7 +269,11 @@ def write_pdb_file(residue_list, file_name, write_Q=False):
                 line = line + ' ' + '{:5.3f}'.format(at_charge)
             line = line + '\n'
             pdb_file.write(line)
-        if residue.get_new_index() == 0:
+        if residue.get_new_index():
+            residue_index = residue.get_new_index()
+        else:
+            residue_index = residue.get_index()
+        if residue_index == 0:
             prev_resid_chain = residue.get_chain()
             if residue_list_no_trim[1].get_chain() != prev_resid_chain:
                 pdb_file.write('TER\n')

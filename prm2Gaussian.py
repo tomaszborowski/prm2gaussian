@@ -41,8 +41,8 @@ REQUIRED packages: numpy, pandas, scipy, re, sys, math, datetime, string, fortra
     
 @authors: borowski, wojdyla
 Report bugs to: tomasz.borowski@ikifp.edu.pl or zuzanna.wojdyla@ikifp.edu.pl
-Last update on 30/11/2022
 Last update on 18/05/2023
+Last update on 7/11/2025
 """
 import sys, os
 import numpy as np
@@ -694,20 +694,19 @@ if read_prm2Gaussian_inp:
         FREEZE = True
         
 ### ---------------------------------------------------------------------- ###
-### Compute new atom indexes if TRIM_MODEL = True                          ###
-    if TRIM_MODEL:
-        old_new_at_ix = {}
-        i = 0
-        j = 0
-        for res in residues:
-            if not res.get_trim():
-                res.set_new_index(i)
-                i += 1
-                for at in res.get_atoms():
-                    at.set_new_index(j)
-                    key = at.get_index()
-                    old_new_at_ix[key] = j
-                    j += 1
+### Compute new atom and residue indexes                                   ###
+    old_new_at_ix = {}
+    i = 0
+    j = 0
+    for res in residues:
+        if not res.get_trim():
+            res.set_new_index(i)
+            i += 1
+            for at in res.get_atoms():
+                at.set_new_index(j)
+                key = at.get_index()
+                old_new_at_ix[key] = j
+                j += 1
 
 
 ### ---------------------------------------------------------------------- ###
